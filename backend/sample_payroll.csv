@@ -1,0 +1,11 @@
+Matricule,Nom_Prenom,Salaire_Base,Taux_Horaire,Heures_Retard,Heures_Absence,Heures_Supp,Prime
+EMP001,Ahmed Ben Ali,2500,15,2,0,10,200
+EMP002,Fatma Trabelsi,3000,18,0,4,5,150
+EMP003,Mohamed Sassi,2200,13,1,2,0,100
+EMP004,Leila Hamdi,3500,20,0,0,15,300
+EMP005,Karim Belhaj,2800,16,3,1,8,250
+EMP006,Sana Jebali,2100,12,0,0,20,50
+EMP007,Nour Mansour,4000,22,0,2,12,400
+EMP008,Riadh Chaabane,1900,11,5,3,0,0
+EMP009,Ines Ferchichi,3200,19,1,0,6,180
+EMP010,Tarek Bouzid,2600,15,0,1,9,120
