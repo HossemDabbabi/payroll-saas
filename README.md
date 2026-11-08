@@ -1,6 +1,63 @@
 # PayrollPro — Automated Payroll Processing & SaaS Platform
 
-A full-stack SaaS application for automating payroll calculations for SMBs.
+A full-stack SaaS application designed to automate payroll calculations, streamline employee file management, and provide administrative oversight for Small and Medium Enterprises (SMBs).
+
+---
+
+## Core Features
+
+- **Automated Payroll Processing**: Bulk processing of employee payroll via `.xlsx` or `.csv` file uploads.
+- **Dynamic Salary Calculations**: Automated computation of late deductions, absence deductions, overtime bonuses, and net salaries based on configured rates.
+- **Tiered Subscription Plans**: Access control and feature limits tied to subscription tiers (Starter, Business, Pro, Enterprise).
+- **Report & Document Generation**: Export detailed Excel reports for entire payroll batches and individual PDF payslips for employees.
+- **Admin Management Portal**: High-level platform dashboard with user account management, company plan overrides, subscription controls, and global transaction management.
+- **Role-Based Access Control (RBAC)**: Secure routes and features segmented by user roles (Standard Users vs. Platform Admins).
+
+---
+
+## User Stories & Acceptance Criteria
+
+### 1. Authentication & Security
+- **User Story**: As a company manager, I want to register an account and log in securely so that I can access my company's payroll operations.
+- **Acceptance Criteria**:
+  - [ ] Users can register with company details and log in using email/password.
+  - [ ] JWT tokens are issued upon login and required for all protected endpoints.
+  - [ ] Authenticated users can retrieve their profile details (`GET /api/auth/me`) and change their password (`PUT /api/auth/change-password`).
+
+### 2. Payroll Upload & Calculation
+- **User Story**: As a payroll manager, I want to upload monthly employee work files so that net salaries are calculated automatically without manual errors.
+- **Acceptance Criteria**:
+  - [ ] System accepts `.xlsx` and `.csv` files containing mandatory columns (`Matricule`, `Nom_Prenom`, `Salaire_Base`, `Taux_Horaire`) and optional columns (`Heures_Retard`, `Heures_Absence`, `Heures_Supp`, `Prime`).
+  - [ ] Calculates Late Deduction ($Heures\_Retard \times Taux\_Horaire$), Absence Deduction ($Heures\_Absence \times Taux\_Horaire$), Overtime Bonus ($Heures\_Supp \times Taux\_Horaire \times 1.25$), and Net Salary.
+  - [ ] Standard user can list, view, and delete their processed payroll records.
+
+### 3. Reports & Payslip Exports
+- **User Story**: As a manager, I want to download payroll reports and individual payslips so that I can distribute them to employees and accounting.
+- **Acceptance Criteria**:
+  - [ ] Users can download a summary Excel report for a full payroll batch (`GET /api/reports/:payrollId/excel`).
+  - [ ] Users can download an individual PDF payslip per employee (`GET /api/reports/:payrollId/payslip/:matricule`).
+
+### 4. Subscription Tiering & Upgrades
+- **User Story**: As a growing business owner, I want to upgrade my subscription plan so that I can process payroll for more employees.
+- **Acceptance Criteria**:
+  - [ ] System enforces employee limits per plan (Starter: ≤20, Business: ≤30, Pro: ≤50, Enterprise: Unlimited).
+  - [ ] Users can view available plans and upgrade their current tier (`POST /api/subscriptions/upgrade`).
+
+### 5. Administrative Oversight
+- **User Story**: As a system administrator, I want to manage platform users, companies, and subscriptions so that I can maintain platform health and support clients.
+- **Acceptance Criteria**:
+  - [ ] Admins accessing `/dashboard` or `/admin` are routed to the Admin Dashboard featuring aggregate stats (revenue, active accounts, plans).
+  - [ ] Admins can activate/deactivate users, change user roles, delete accounts, and update payment transaction statuses.
+  - [ ] Admins can override company plan limits, trial periods, and expiration dates (`PATCH /api/admin/companies/:id/subscription`).
+
+---
+
+## Technology Stack
+
+- **Backend**: Node.js, Express.js, MongoDB / Mongoose, JWT (Authentication), Multer (File Handling), XLSX (Excel Parsing/Generation), PDFKit (PDF Generation)
+- **Frontend**: React 18, Vite, Tailwind CSS, React Router, Chart.js, Lucide Icons, Axios
+
+---
 
 ## Quick Start
 
@@ -13,101 +70,5 @@ A full-stack SaaS application for automating payroll calculations for SMBs.
 ```bash
 cd backend
 npm install
-cp .env.example .env
-# Edit .env with your MongoDB URI and JWT secret
+cp .env.example .env # Edit .env with your MongoDB URI and JWT secret
 npm run dev
-```
-
-### 2. Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend runs on http://localhost:5173 and proxies `/api` to http://localhost:5000.
-
----
-
-## File Upload Format
-
-Upload `.xlsx` or `.csv` files with these columns:
-
-| Column | Required | Description |
-|---|---|---|
-| `Matricule` | ✅ | Employee ID |
-| `Nom_Prenom` | ✅ | Full name |
-| `Salaire_Base` | ✅ | Base salary |
-| `Taux_Horaire` | ✅ | Hourly rate |
-| `Heures_Retard` | ⬜ | Late hours |
-| `Heures_Absence` | ⬜ | Absent hours |
-| `Heures_Supp` | ⬜ | Overtime hours |
-| `Prime` | ⬜ | Bonus |
-
-## Payroll Formulas
-
-```
-Late Deduction      = Heures_Retard × Taux_Horaire
-Absence Deduction   = Heures_Absence × Taux_Horaire
-Overtime Bonus      = Heures_Supp × Taux_Horaire × 1.25
-Net Salary          = Salaire_Base + Prime + Overtime Bonus - (Late + Absence Deductions)
-```
-
-## Subscription Tiers
-
-| Plan | Employees | Price |
-|---|---|---|
-| Starter | ≤ 20 | Free |
-| Business | ≤ 30 | $29/mo |
-| Pro | ≤ 50 | $59/mo |
-| Enterprise | Unlimited | Custom |
-
-## API Endpoints
-
-### Auth
-- `POST /api/auth/register` — Register company
-- `POST /api/auth/login` — Login
-- `GET /api/auth/me` — Get current user (auth required)
-- `PUT /api/auth/change-password` — Change password (auth required)
-
-### Payroll
-- `POST /api/payroll/upload` — Upload & process payroll file (auth required)
-- `GET /api/payroll` — List payroll records (auth required)
-- `GET /api/payroll/:id` — Get single record (auth required)
-- `DELETE /api/payroll/:id` — Delete record (auth required)
-- `GET /api/payroll/dashboard/stats` — Dashboard stats (auth required)
-
-### Reports
-- `GET /api/reports/:payrollId/excel` — Download Excel report (auth required)
-- `GET /api/reports/:payrollId/payslip/:matricule` — Download PDF payslip (auth required)
-
-### Subscriptions
-- `GET /api/subscriptions/plans` — List all plans
-- `GET /api/subscriptions/current` — Get current subscription (auth required)
-- `POST /api/subscriptions/upgrade` — Upgrade plan (auth required)
-
-### Admin (role: `admin` required)
-- `GET /api/admin/stats` — Admin dashboard aggregates (accounts, plans, revenue, activity)
-- `GET /api/admin/users` — List all users
-- `PATCH /api/admin/users/:id` — Update user (`isActive`, `role`, `companyName`)
-- `DELETE /api/admin/users/:id` — Delete user + their payroll/payment history
-- `GET /api/admin/companies` — List all companies with plan info
-- `GET /api/admin/companies/:id` — Get one company
-- `PATCH /api/admin/companies/:id/subscription` — Override plan/status/limit/expiry/trial (`extendDays` supported)
-- `GET /api/admin/payments` — Global payment history (`?status=&plan=&page=&limit=`)
-- `PATCH /api/admin/payments/:id` — Update payment status/notes
-
-### Admin frontend routes
-- `/dashboard` — Admins see the **Admin Dashboard**, other users see the payroll dashboard
-- `/admin` — Admin dashboard overview
-- `/admin/users` — User management (activate/deactivate, role, delete)
-- `/admin/accounts` — Account management (plans, limits, trial/expiry)
-- `/admin/payments` — Payment management (refund/fail/complete transactions)
-
----
-
-## Tech Stack
-
-**Backend:** Node.js, Express, MongoDB/Mongoose, JWT, Multer, XLSX, PDFKit
-
-**Frontend:** React 18, Vite, Tailwind CSS, React Router, Chart.js, Lucide Icons, Axios
