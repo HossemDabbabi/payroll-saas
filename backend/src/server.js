@@ -18,8 +18,11 @@ const { errorHandler, notFound } = require('./middleware/error.middleware');
 
 const app = express();
 
-// Connect to MongoDB, then run the single-admin integrity check
-connectDB().then(() => ensureSingleAdmin());
+// Connect to MongoDB seulement quand le fichier est lance directement
+// (npm start / Docker), pas quand Supertest l'importe
+if (require.main === module) {
+  connectDB().then(() => ensureSingleAdmin());
+}
 
 // Security Middleware
 app.use(helmet());
@@ -41,7 +44,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Logging
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test') {
   app.use(morgan('dev'));
 }
 
@@ -66,8 +69,10 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  });
+}
 
 module.exports = app;
