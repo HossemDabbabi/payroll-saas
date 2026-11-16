@@ -1,15 +1,15 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-const email = "llllll@company.com";
-const password = "123123123aA@";
-// @ts-check
+const email = process.env.PLAYWRIGHT_TEST_EMAIL;
+const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
 
-
-
+test.beforeEach(() => {
+  test.skip(!email || !password, 'Set dedicated test-account credentials to run authenticated browser tests.');
+});
 
 test('verifies sidebar navigation and settings pages', async ({ page }) => {
-  // 1. تسجيل الدخول أولاً
+  // تسجيل الدخول أولاً
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);
@@ -75,6 +75,55 @@ test('signs in, opens payroll records, and prepares a payroll upload', async ({ 
 
   await expect(page.getByText('playwright-payroll.csv')).toBeVisible();
   await expect(page.getByRole('button', { name: /Process Payroll Batch/ })).toBeVisible();
-  await page.getByRole('button', { name: /Remove/ }).click();
+  await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await expect(page.getByText('Drop your payroll file here')).toBeVisible();
+});
+
+// --- Test 3: تسجيل الخروج (Logout) ---
+test('signs in successfully and logs out', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole('button', { name: /Sign In/ }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const logoutButton = page.getByRole('button', { name: /Logout|Sign Out/i }).first();
+  await expect(logoutButton).toBeVisible();
+  await logoutButton.click();
+
+  await expect(page).toHaveURL(/\/login$/);
+});
+
+// --- Test 4: تغيير كلمة المرور (Settings Password Update) ---
+test('navigates to settings and checks password inputs', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole('button', { name: /Sign In/ }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  const settingsLink = page.getByRole('link', { name: 'Settings' }).first();
+  await settingsLink.click();
+  await expect(page).toHaveURL(/\/settings$/);
+
+  const currentPassInput = page.locator('input[name="currentPassword"], input[type="password"]').first();
+  await expect(currentPassInput).toBeVisible();
+});
+
+// --- Test 5: تفقد خطط الاشتراكات (Subscription Plans) ---
+test('views subscription plans and checks pricing options', async ({ page }) => {
+  await page.goto('/login');
+  await page.locator('input[type="email"]').fill(email);
+  await page.locator('input[type="password"]').fill(password);
+  await page.getByRole('button', { name: /Sign In/ }).click();
+
+  await expect(page).toHaveURL(/\/dashboard$/);
+
+  await page.getByRole('link', { name: 'Subscription' }).click();
+  await expect(page).toHaveURL(/\/subscription$/);
+
+  await expect(page.getByRole('heading', { name: 'Business' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pro' })).toBeVisible();
 });

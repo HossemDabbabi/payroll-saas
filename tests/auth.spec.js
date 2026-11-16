@@ -1,15 +1,14 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-const email = "llllll@company.com";
-const password = "123123123aA@";
+const email = process.env.PLAYWRIGHT_TEST_EMAIL;
+const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
+
+test.beforeEach(() => {
+  test.skip(!email || !password, 'Set dedicated test-account credentials to run authenticated browser tests.');
+});
 
 test('signs in and opens the dashboard', async ({ page }) => {
-  test.skip(
-    !email || !password,
-    'Set PLAYWRIGHT_TEST_EMAIL and PLAYWRIGHT_TEST_PASSWORD to run the authenticated login test.'
-  );
-
   await page.goto('/login');
   await page.locator('input[type="email"]').fill(email);
   await page.locator('input[type="password"]').fill(password);

@@ -4,12 +4,26 @@
 
 This plan covers payroll calculation/import, authentication and authorization, payroll access, and the payroll assistant. It is intended for both manual testing and regression automation.
 
-Prerequisites: Node.js 18+, dependencies installed in `backend`, `frontend`, and the repository root, and MongoDB running for database-backed scenarios. Use a disposable test database and synthetic employee data only. Do not upload real employee or payroll information to AI tools.
+Prerequisites: Node.js 18+, dependencies installed in `backend`, `frontend`, and the repository root. The automated Jest and Vitest suites do not require MongoDB. Authenticated browser workflows require the backend, MongoDB, and a dedicated synthetic test account. Do not use production accounts or upload real employee or payroll information to AI tools.
 
-Run the backend unit tests from `backend/`:
+Run the frontend component tests from the repository root:
 
 ```bash
-npm test -- --runInBand
+npm run test:frontend
+```
+
+Run the backend tests from the repository root:
+
+```bash
+npm run test:backend
+```
+
+The frontend tests cover the existing login page render, successful submission/navigation, and displayed API errors. Backend route tests use Supertest against the existing Express routes without connecting to MongoDB; existing calculation and copilot controller tests remain in place.
+
+Run the unauthenticated browser smoke tests in Chromium:
+
+```bash
+npm run test:e2e -- tests/example.spec.js --project=chromium
 ```
 
 Run the frontend build from `frontend/`:
@@ -18,21 +32,15 @@ Run the frontend build from `frontend/`:
 npm run build
 ```
 
-Run the local browser smoke tests from the repository root:
+The Playwright configuration starts the Vite development server. MongoDB is not required for these unauthenticated smoke tests. The HTML report and failure screenshots are written under `reports/playwright/` and are git-ignored.
+
+For authenticated browser flows, set `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` to a dedicated synthetic test account, start the backend and MongoDB, then run:
 
 ```bash
-npx playwright test --project=chromium
+npm run test:e2e -- tests/auth.spec.js tests/payroll-flow.spec.js --project=chromium
 ```
 
-The Playwright configuration starts the Vite development server. MongoDB is not required for those two unauthenticated smoke tests.
-
-For the authenticated login test, start the backend and MongoDB, and provide a valid test account through `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` in the shell or CI secret store. Then run:
-
-```bash
-npx playwright test tests/auth.spec.js --project=chromium
-```
-
-The authenticated test is skipped when either variable is missing. Never commit test credentials or use a production account.
+The authenticated tests are skipped when either variable is missing. Never commit test credentials or use a production account.
 
 ## Test cases
 
@@ -63,4 +71,4 @@ For every run, record date, tester, commit, environment, exact command or manual
 
 ## Current automation gaps
 
-The checked-in automated suites cover payroll calculations and several payroll-assistant controller responses. The Playwright tests cover unauthenticated frontend smoke behavior and a credential-gated login flow. File upload edge cases, authorization/data isolation, downloads, subscription behavior, and broader browser/device coverage still require execution and/or automation. The browser test is not a substitute for the manual/backend scenarios above.
+The checked-in automated suites cover login UI behavior, payroll calculations, selected payroll-assistant controller responses, subscription plan listing, registration input validation, JWT authentication with mocked user lookups, unauthenticated route protection, admin-role middleware, and not-found handling. Playwright covers unauthenticated smoke behavior and credential-gated navigation/payroll UI flows. Database-backed authentication/authorization, payroll persistence and tenant isolation, report downloads, subscription upgrades, and file-upload processing still require isolated database-backed test infrastructure or manual execution. No integration test connects to MongoDB because server startup currently connects to the configured database on import.
