@@ -18,7 +18,12 @@ describe('Health & 404', () => {
 describe('Routes protegees sans token', () => {
   test.each([
     '/api/payroll',
-    '/api/reports',
+    '/api/payroll/dashboard/stats',
+    '/api/payroll/123',
+    '/api/reports/123/excel',
+    '/api/reports/123/payslip/M001',
+    '/api/subscriptions/current',
+    '/api/auth/me',
     '/api/admin',
   ])('GET %s sans token -> 401', async (url) => {
     const res = await request(app).get(url);
@@ -74,5 +79,22 @@ describe('Validation auth (sans DB)', () => {
       .post('/api/auth/register')
       .send({ name: 'Test', email: 'a@a.com', password: '1234567' });
     expect([400, 422]).toContain(res.status);
+  });
+});
+
+describe('Methodes protegees sans token', () => {
+  test('POST /api/subscriptions/upgrade -> 401', async () => {
+    const res = await request(app).post('/api/subscriptions/upgrade').send({ plan: 'pro' });
+    expect(res.status).toBe(401);
+  });
+
+  test('PUT /api/auth/change-password -> 401', async () => {
+    const res = await request(app).put('/api/auth/change-password').send({});
+    expect(res.status).toBe(401);
+  });
+
+  test('DELETE /api/payroll/123 -> 401', async () => {
+    const res = await request(app).delete('/api/payroll/123');
+    expect(res.status).toBe(401);
   });
 });
