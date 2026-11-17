@@ -1,9 +1,16 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-const email = "llllll@company.com";
-const password = "123123123aA@";
-// @ts-check
+// Credentials come from the environment, never from the source code.
+const email = process.env.PLAYWRIGHT_TEST_EMAIL;
+const password = process.env.PLAYWRIGHT_TEST_PASSWORD;
+
+test.beforeEach(() => {
+  test.skip(
+    !email || !password,
+    'Set PLAYWRIGHT_TEST_EMAIL and PLAYWRIGHT_TEST_PASSWORD (backend + MongoDB running) to run the authenticated flow.'
+  );
+});
 
 
 
@@ -11,8 +18,8 @@ const password = "123123123aA@";
 test('verifies sidebar navigation and settings pages', async ({ page }) => {
   // 1. تسجيل الدخول أولاً
   await page.goto('/login');
-  await page.locator('input[type="email"]').fill(email);
-  await page.locator('input[type="password"]').fill(password);
+  await page.locator('input[type="email"]').fill(String(email));
+  await page.locator('input[type="password"]').fill(String(password));
   await page.getByRole('button', { name: /Sign In/ }).click();
 
   // التأكد من الوصول للـ Dashboard
@@ -38,8 +45,8 @@ test('verifies sidebar navigation and settings pages', async ({ page }) => {
 
 test('signs in, opens payroll records, and prepares a payroll upload', async ({ page }) => {
   await page.goto('/login');
-  await page.locator('input[type="email"]').fill(email);
-  await page.locator('input[type="password"]').fill(password);
+  await page.locator('input[type="email"]').fill(String(email));
+  await page.locator('input[type="password"]').fill(String(password));
   await page.getByRole('button', { name: /Sign In/ }).click();
 
   await expect(page).toHaveURL(/\/dashboard$/);

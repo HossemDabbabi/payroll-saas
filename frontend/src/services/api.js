@@ -12,11 +12,14 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally
+// Handle 401 globally (expired/invalid token).
+// A failed login also returns 401: do not reload the page then,
+// otherwise the "Invalid email or password" message disappears.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const isLoginRequest = error.config?.url?.includes('/auth/login');
+    if (error.response?.status === 401 && !isLoginRequest) {
       localStorage.removeItem('payroll_token');
       localStorage.removeItem('payroll_user');
       window.location.href = '/login';

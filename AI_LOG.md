@@ -22,3 +22,13 @@
 | 2026-11-16 | Meme prompt payroll | Severite "Haute" pour la stack trace exposee dans la reponse | L'IA n'a pas verifie `NODE_ENV` du deploiement: le test `production` passe, donc le bug concerne seulement hors production |
 
 | 2026-11-16 | Tests Supertest pour la validation auth | `expect([400, 401, 422]).toContain(res.status)` | Assertions trop faibles: le test passe meme si le code renvoie un mauvais status. A durcir apres lecture de `auth.controller.js` |
+
+| 2026-11-17 | Tests Playwright negatifs (mauvais login, fichier invalide) avec API mockee | Test `wrong credentials` attendait le message "Invalid email or password." visible apres un 401 | Le test a echoue pour une bonne raison: `api.js` fait `window.location.href='/login'` sur TOUT 401, y compris un login rate. La page se recharge et le message disparait. Vrai bug (#12), corrige en ignorant la route `/auth/login` dans l'intercepteur |
+
+| 2026-11-17 | Meme prompt, test `.pdf` refuse | `page.waitForEvent('dialog')` puis `setInputFiles` | Le test restait bloque (timeout 30 s): l'`alert()` du client bloque la page tant que personne ne la ferme. Il faut `page.once('dialog', d => d.dismiss())` avant l'action. Puis l'IA a verifie `toHaveCount(0)` sur le bouton Process, alors qu'il existe toujours (desactive): corrige en `toBeDisabled()` |
+
+| 2026-11-17 | Relecture du depot avant le rapport final | L'IA a signale que `payroll-flow.spec.js` contenait encore un email et un mot de passe en clair | Le premier correctif (commit 6756d3c) n'avait traite que `auth.spec.js`. Identifiants maintenant lus depuis `PLAYWRIGHT_TEST_EMAIL/PASSWORD`, tests ignores si absents |
+
+| 2026-11-17 | Rapport de couverture (`npm test`) | Couverture de `copilot.controller.js` a 6 % alors que des tests existent | `testMatch` ne contenait que `**/tests/**`: les 2 suites de `src/**/__tests__` (7 tests) n'etaient jamais executees, et elles etaient comptees comme du code source dans la couverture. `jest.config.js` corrige: 8 suites, 135 tests |
+
+| 2026-11-17 | Workflow CI Playwright (2e version) | Workflow lance backend + frontend + Playwright sur 3 navigateurs | Choix simplifie: Chromium uniquement, tests negatifs avec API mockee (pas de MongoDB en CI), job Jest separe avec upload du rapport de couverture. Les tests avec compte reel restent ignores sans secrets |

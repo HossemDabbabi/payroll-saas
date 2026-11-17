@@ -71,4 +71,31 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
 cd backend
 npm install
 cp .env.example .env # Edit .env with your MongoDB URI and JWT secret
-npm run dev
+npm run dev 
+```
+
+### 2. Frontend Setup
+```bash
+cd frontend
+npm install
+npm run dev   # http://localhost:5173 (proxies /api to http://localhost:5000)
+```
+
+### 3. Docker (optional)
+```bash
+docker compose up --build
+```
+
+---
+
+## Testing
+
+| Layer | Tool | Command |
+|---|---|---|
+| Backend unit / API | Jest + Supertest | `cd backend && npm test -- --runInBand` (includes coverage report in `backend/coverage/`) |
+| Browser (E2E) | Playwright | `npx playwright test --project=chromium` (from the repo root) |
+| Lint | ESLint | `npx eslint tests` |
+
+Tests that need a real account (`tests/auth.spec.js`, `tests/payroll-flow.spec.js`) read `PLAYWRIGHT_TEST_EMAIL` and `PLAYWRIGHT_TEST_PASSWORD` from the environment and are skipped when they are not set. Never commit credentials.
+
+See `TEST_PLAN.md` for the test plan and results, `AI_LOG.md` for the AI interaction log, and `PERFORMANCE_REVIEW.md` for the performance review.
