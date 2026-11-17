@@ -212,7 +212,7 @@ describe('parseAndCalculatePayroll', () => {
 // test.failing = "le test DOIT échouer". Kif developer ysala7 el bug,
 // el test yetla3 rouge → tbaddlou l test() 3adi.
 describe('BUGS CONNUS (a corriger par les devs)', () => {
-  test.failing('BUG1: fichier mouch mawjoud → message ma yetla3ch "raw is not defined"', () => {
+  test('BUG1: fichier mouch mawjoud → message ma yetla3ch "raw is not defined"', () => {
     let msg = '';
     try {
       parseAndCalculatePayroll(path.join(tmpDir, 'nexiste-pas.csv'));
@@ -222,7 +222,7 @@ describe('BUGS CONNUS (a corriger par les devs)', () => {
     expect(msg).not.toMatch(/raw is not defined/);
   });
 
-  test.failing('BUG2: colonne "Nombre_Enfants" ma tfassedch Nom_Prenom', () => {
+  test('BUG2: colonne "Nombre_Enfants" ma tfassedch Nom_Prenom', () => {
     const f = writeCsv('nom.csv', [
       'Matricule,Nom_Prenom,Salaire_Base,Taux_Horaire,Nombre_Enfants',
       'E001,Ali,1000,10,3',
@@ -231,12 +231,12 @@ describe('BUGS CONNUS (a corriger par les devs)', () => {
     expect(employees[0].nom_prenom).toBe('Ali');
   });
 
-  test.failing('BUG3: "7.500" lazem yetfahem 7.5 (TND) mouch 7500', () => {
+  test('BUG3: "7.500" lazem yetfahem 7.5 (TND) mouch 7500', () => {
     const r = calculateEmployeePayroll(baseRow({ Taux_Horaire: '7.500' }), 2);
     expect(r.taux_horaire).toBeCloseTo(7.5, 3);
   });
 
-  test.failing('BUG4: matricule doublon lazem yetعلّم b erreur', () => {
+  test('BUG4: matricule doublon lazem yetعلّم b erreur', () => {
     const f = writeCsv('dup.csv', [
       HEADER,
       'E001,Ali,1000,10,0,0,0,0',
@@ -246,7 +246,7 @@ describe('BUGS CONNUS (a corriger par les devs)', () => {
     expect(parseErrors.length).toBeGreaterThan(0);
   });
 
-  test.failing('BUG5: net salary ma yت3adch négatif (absence > salaire)', () => {
+  test('BUG5: net salary ma yت3adch négatif (absence > salaire)', () => {
     const r = calculateEmployeePayroll(
       baseRow({ Salaire_Base: 100, Heures_Absence: 50 }),
       2

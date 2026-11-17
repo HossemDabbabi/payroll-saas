@@ -18,12 +18,6 @@ const { errorHandler, notFound } = require('./middleware/error.middleware');
 
 const app = express();
 
-// Connect to MongoDB seulement quand le fichier est lance directement
-// (npm start / Docker), pas quand Supertest l'importe
-if (require.main === module) {
-  connectDB().then(() => ensureSingleAdmin());
-}
-
 // Security Middleware
 app.use(helmet());
 app.use(cors({
@@ -69,9 +63,22 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-if (require.main === module) {
+
+// FIX BUG-05: the HTTP server only starts listening once MongoDB is connected
+// and the admin account is ensured. Only runs when the file is launched directly
+// (npm start / Docker), not when Supertest imports the app.
+async function start() {
+  await connectDB();
+  await ensureSingleAdmin();
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  });
+}
+
+if (require.main === module) {
+  start().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   });
 }
 

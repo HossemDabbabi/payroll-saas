@@ -9,24 +9,47 @@ const OPTIONAL_COLUMNS = ['Heures_Retard', 'Heures_Absence', 'Heures_Supp', 'Pri
 const ALL_COLUMNS = [...REQUIRED_COLUMNS, ...OPTIONAL_COLUMNS];
 
 /**
- * Normalize a column header to match expected names.
+ * Exact aliases accepted for each column (after cleaning).
+ * FIX #2: no more includes('nom') / includes('cnss') ... -> only exact matches,
+ * so "Nombre_Enfants" is never confused with "Nom_Prenom".
+ */
+const EXTRA_ALIASES = {
+  Nom_Prenom: ['nom', 'nom_et_prenom', 'nom_prenoms', 'nom_et_prenoms'],
+  Salaire_Base: ['salairebase', 'salaire_de_base', 'base'],
+  Taux_Horaire: ['tauxhoraire'],
+  IRPP: ['impot'],
+  Avance: ['avance_sur_salaire'],
+};
+
+const HEADER_LOOKUP = new Map();
+ALL_COLUMNS.forEach((col) => {
+  HEADER_LOOKUP.set(col.toLowerCase(), col);
+  (EXTRA_ALIASES[col] || []).forEach((alias) => HEADER_LOOKUP.set(alias, col));
+});
+
+/**
+ * Normalize a column header to match expected names (exact match only).
  */
 const normalizeHeader = (header) => {
-  const cleaned = String(header).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  
-  if (cleaned === 'cnss' || cleaned.includes('cnss')) return 'CNSS';
-  if (cleaned === 'irpp' || cleaned.includes('irpp') || cleaned === 'impot') return 'IRPP';
-  if (cleaned === 'avance' || cleaned.includes('avance')) return 'Avance';
-  if (cleaned === 'nom_prenom' || cleaned === 'nom_et_prenom' || cleaned.includes('nom')) return 'Nom_Prenom';
-  if (cleaned === 'salaire_base' || cleaned === 'salairebase' || cleaned === 'base') return 'Salaire_Base';
-  if (cleaned === 'taux_horaire' || cleaned === 'tauxhoraire') return 'Taux_Horaire';
+  const cleaned = String(header)
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip accents: "Prénom" -> "prenom"
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
 
-  return ALL_COLUMNS.find((col) => col.toLowerCase() === cleaned) || header;
+  return HEADER_LOOKUP.get(cleaned) || header;
 };
 
 /**
  * Safely parse a numeric value from a cell.
  * Returns the number or 0 if invalid.
+ *
+ * FIX #3: TND uses 3 decimals (millimes), so "7.500" = 7.5, not 7500.
+ * A dot is only treated as a thousands separator when it is clearly one:
+ *   - several groups: "1.234.567"
+ *   - or followed by a decimal comma: "1.234,50"
  */
 const safeNumber = (val, fieldName, rowErrors) => {
   if (val === null || val === undefined || val === '') {
@@ -41,13 +64,18 @@ const safeNumber = (val, fieldName, rowErrors) => {
     return val;
   }
 
-  // Handle strings with thousand separators (spaces, commas, periods) and decimal commas
   let str = String(val).trim().replace(/\s+/g, '').replace(/[^0-9.,-]/g, '');
+
   if (/^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(str)) {
+    // 1,234 or 1,234,567.50  -> comma = thousands
     str = str.replace(/,/g, '');
-  } else if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(str)) {
+  } else if (
+    /^-?\d{1,3}(\.\d{3})+,\d+$/.test(str) || // 1.234,50
+    /^-?\d{1,3}(\.\d{3}){2,}$/.test(str)     // 1.234.567
+  ) {
     str = str.replace(/\./g, '').replace(',', '.');
   } else if (str.includes(',') && !str.includes('.')) {
+    // 7,500 / 12,5 -> decimal comma
     str = str.replace(',', '.');
   } else if (str.includes(',') && str.includes('.')) {
     if (str.indexOf(',') < str.indexOf('.')) {
@@ -56,6 +84,7 @@ const safeNumber = (val, fieldName, rowErrors) => {
       str = str.replace(/\./g, '').replace(',', '.');
     }
   }
+  // else: "7.500" stays "7.500" -> parseFloat = 7.5
 
   const num = parseFloat(str);
   if (isNaN(num)) {
@@ -140,7 +169,7 @@ const calculateEmployeePayroll = (row, rowIndex) => {
   const irppInFile = safeNumber(row['IRPP'], 'IRPP', rowErrors);
   const avance = safeNumber(row['Avance'], 'Avance', rowErrors);
 
-  if (salaire_base === 0 && !rowErrors.some(e => e.includes('Salaire_Base'))) {
+  if (salaire_base === 0 && !rowErrors.some((e) => e.includes('Salaire_Base'))) {
     rowErrors.push('Warning: Salaire_Base is 0.');
   }
 
@@ -159,9 +188,16 @@ const calculateEmployeePayroll = (row, rowIndex) => {
 
   const cnss = cnssInFile > 0 ? cnssInFile : taxCalculated.cnss;
   const irpp = irppInFile > 0 ? irppInFile : taxCalculated.irpp;
-  const net_salary = parseFloat(
-    (gross_salary - cnss - irpp - avance).toFixed(3)
-  );
+  const computed_net = parseFloat((gross_salary - cnss - irpp - avance).toFixed(3));
+
+  // FIX #5: a negative net salary is flagged AND capped at 0 (never paid as negative)
+  let net_salary = computed_net;
+  if (computed_net < 0) {
+    net_salary = 0;
+    rowErrors.push(
+      `Warning: negative net salary (${computed_net}) — capped at 0. Deductions exceed gross salary, please check this row.`
+    );
+  }
 
   return {
     matricule: matricule || `UNKNOWN_${rowIndex}`,
@@ -190,21 +226,24 @@ const calculateEmployeePayroll = (row, rowIndex) => {
  * @returns {{ employees: Array, summary: Object, parseErrors: Array }}
  */
 const parseAndCalculatePayroll = (filePath) => {
-  const ext = path.extname(filePath).toLowerCase();
   let workbook;
 
+  // FIX #1: pass the options object that is actually declared, and remove the
+  // silent fallback that hid the real error behind "raw is not defined".
+  const readOptions = { type: 'file', raw: true };
   try {
-    const readOptions = { type: 'file', raw: true };
-    workbook = XLSX.readFile(filePath, raw);
+    workbook = XLSX.readFile(filePath, readOptions);
   } catch (err) {
-    try {
-      workbook = XLSX.readFile(filePath);
-    } catch (err2) {
-      throw new Error(`Failed to read file: ${err.message}`);
+    if (err && (err.code === 'ENOENT' || /ENOENT|Cannot find file/i.test(err.message))) {
+      throw new Error(`Fichier introuvable : ${path.basename(String(filePath))}`);
     }
+    throw new Error(`Failed to read file: ${err.message}`);
   }
 
-  const sheetName = workbook.SheetNames[0];
+  const sheetName = workbook.SheetNames && workbook.SheetNames[0];
+  if (!sheetName) {
+    throw new Error('The uploaded file is empty or contains no data rows.');
+  }
   const worksheet = workbook.Sheets[sheetName];
   const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: true });
 
@@ -229,13 +268,29 @@ const parseAndCalculatePayroll = (filePath) => {
   }
 
   // Process each employee row
-  const parseErrors = [];
-  const employees = normalizedRows.map((row, index) => {
-    const result = calculateEmployeePayroll(row, index + 2); // +2 for 1-indexed + header
-    if (result.hasErrors) {
-      parseErrors.push({ row: index + 2, errors: result.errors });
+  const employees = normalizedRows.map((row, index) =>
+    calculateEmployeePayroll(row, index + 2) // +2 for 1-indexed + header
+  );
+
+  // FIX #4: detect duplicate matricules (flag every repeated row)
+  const seen = new Map(); // matricule -> first row number
+  employees.forEach((emp, index) => {
+    if (emp.matricule.startsWith('UNKNOWN_')) return;
+    const rowNumber = index + 2;
+    const key = emp.matricule.toLowerCase();
+    if (seen.has(key)) {
+      emp.errors.push(
+        `Duplicate matricule '${emp.matricule}' (already used on row ${seen.get(key)}).`
+      );
+      emp.hasErrors = true;
+    } else {
+      seen.set(key, rowNumber);
     }
-    return result;
+  });
+
+  const parseErrors = [];
+  employees.forEach((emp, index) => {
+    if (emp.hasErrors) parseErrors.push({ row: index + 2, errors: emp.errors });
   });
 
   // Compute summary

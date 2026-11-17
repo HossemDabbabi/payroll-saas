@@ -18,6 +18,9 @@ const storage = multer.diskStorage({
   },
 });
 
+// Generic mimetypes some browsers/OS send for spreadsheets.
+const genericMimes = ['application/octet-stream', ''];
+
 const fileFilter = (req, file, cb) => {
   const allowedMimes = [
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
@@ -28,10 +31,19 @@ const fileFilter = (req, file, cb) => {
   const allowedExtensions = ['.xlsx', '.xls', '.csv'];
   const ext = path.extname(file.originalname).toLowerCase();
 
-  if (allowedMimes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+  // FIX #10: the extension MUST be valid AND the mimetype must be compatible.
+  // The mimetype is client-controlled, so it can never be enough on its own
+  // (a .pdf declared as text/csv is rejected because of its extension).
+  const extensionOk = allowedExtensions.includes(ext);
+  const mimeOk = allowedMimes.includes(file.mimetype) || genericMimes.includes(file.mimetype);
+
+  if (extensionOk && mimeOk) {
     cb(null, true);
   } else {
-    cb(new Error('Invalid file type. Only .xlsx, .xls, and .csv files are allowed.'), false);
+    // FIX #9: a client error, not a 500
+    const error = new Error('Invalid file type. Only .xlsx, .xls, and .csv files are allowed.');
+    error.status = 400;
+    cb(error, false);
   }
 };
 
