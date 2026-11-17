@@ -17,18 +17,20 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
 
 ## User Stories & Acceptance Criteria
 
+> `[x]` = verified by automated tests (see `TEST_PLAN.md`). `[ ]` = not verified yet.
+
 ### 1. Authentication & Security
 - **User Story**: As a company manager, I want to register an account and log in securely so that I can access my company's payroll operations.
 - **Acceptance Criteria**:
-  - [ ] Users can register with company details and log in using email/password.
-  - [ ] JWT tokens are issued upon login and required for all protected endpoints.
-  - [ ] Authenticated users can retrieve their profile details (`GET /api/auth/me`) and change their password (`PUT /api/auth/change-password`).
+  - [x] Users can register with company details and log in using email/password.
+  - [x] JWT tokens are issued upon login and required for all protected endpoints.
+  - [x] Authenticated users can retrieve their profile details (`GET /api/auth/me`) and change their password (`PUT /api/auth/change-password`).
 
 ### 2. Payroll Upload & Calculation
 - **User Story**: As a payroll manager, I want to upload monthly employee work files so that net salaries are calculated automatically without manual errors.
 - **Acceptance Criteria**:
-  - [ ] System accepts `.xlsx` and `.csv` files containing mandatory columns (`Matricule`, `Nom_Prenom`, `Salaire_Base`, `Taux_Horaire`) and optional columns (`Heures_Retard`, `Heures_Absence`, `Heures_Supp`, `Prime`).
-  - [ ] Calculates Late Deduction ($Heures\_Retard \times Taux\_Horaire$), Absence Deduction ($Heures\_Absence \times Taux\_Horaire$), Overtime Bonus ($Heures\_Supp \times Taux\_Horaire \times 1.25$), and Net Salary.
+  - [x] System accepts `.xlsx` and `.csv` files containing mandatory columns (`Matricule`, `Nom_Prenom`, `Salaire_Base`, `Taux_Horaire`) and optional columns (`Heures_Retard`, `Heures_Absence`, `Heures_Supp`, `Prime`).
+  - [x] Calculates Late Deduction ($Heures\_Retard \times Taux\_Horaire$), Absence Deduction ($Heures\_Absence \times Taux\_Horaire$), Overtime Bonus ($Heures\_Supp \times Taux\_Horaire \times 1.25$), and Net Salary.
   - [ ] Standard user can list, view, and delete their processed payroll records.
 
 ### 3. Reports & Payslip Exports
@@ -40,7 +42,7 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
 ### 4. Subscription Tiering & Upgrades
 - **User Story**: As a growing business owner, I want to upgrade my subscription plan so that I can process payroll for more employees.
 - **Acceptance Criteria**:
-  - [ ] System enforces employee limits per plan (Starter: ≤20, Business: ≤30, Pro: ≤50, Enterprise: Unlimited).
+  - [x] System enforces employee limits per plan (Starter: ≤20, Business: ≤30, Pro: ≤50, Enterprise: Unlimited).
   - [ ] Users can view available plans and upgrade their current tier (`POST /api/subscriptions/upgrade`).
 
 ### 5. Administrative Oversight
@@ -49,6 +51,21 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
   - [ ] Admins accessing `/dashboard` or `/admin` are routed to the Admin Dashboard featuring aggregate stats (revenue, active accounts, plans).
   - [ ] Admins can activate/deactivate users, change user roles, delete accounts, and update payment transaction statuses.
   - [ ] Admins can override company plan limits, trial periods, and expiration dates (`PATCH /api/admin/companies/:id/subscription`).
+
+---
+
+## Business Rules Found During Testing
+
+These rules were not written in the first version of this specification. They were discovered while testing and are now implemented and covered by tests.
+
+- **Tunisian number format**: TND has three decimals, so `7.500` means 7.5. A dot is a thousands separator only in `1.234.567` or `1.234,50`.
+- **Taxes**: CNSS and IRPP are calculated from the gross salary unless the file provides positive overrides.
+- **Negative net salary**: it is capped at 0 and the row gets a warning.
+- **Duplicate matricules**: every repeated row is flagged in the processing errors.
+- **Upload**: only `.xlsx`, `.xls` and `.csv` are accepted (extension AND mimetype must match); an invalid file returns 400, a file that is too large returns 413. Rejected files are deleted from disk.
+- **Period**: `month` and `year` must be integers (month 1 to 12, year 2000 to 2100).
+- **Pagination**: `page` is at least 1 and `limit` is between 1 and 100 (10 by default).
+- **Errors**: stack traces are only returned when `NODE_ENV` is `development`.
 
 ---
 
@@ -71,7 +88,7 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
 cd backend
 npm install
 cp .env.example .env # Edit .env with your MongoDB URI and JWT secret
-npm run dev 
+npm run dev
 ```
 
 ### 2. Frontend Setup
@@ -79,11 +96,6 @@ npm run dev
 cd frontend
 npm install
 npm run dev   # http://localhost:5173 (proxies /api to http://localhost:5000)
-```
-
-### 3. Docker (optional)
-```bash
-docker compose up --build
 ```
 
 ---
