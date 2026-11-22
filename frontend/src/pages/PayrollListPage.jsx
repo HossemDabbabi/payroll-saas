@@ -12,6 +12,7 @@ import {
   FileText,
   TrendingDown,
   TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -34,17 +35,19 @@ export default function PayrollListPage() {
   const { records, loading, pagination, fetchRecords, deleteRecord, downloadExcel } = usePayroll();
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteRecord, setConfirmDeleteRecord] = useState(null);
 
   useEffect(() => {
     fetchRecords({ page });
   }, [page]);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this payroll record? This action cannot be undone.'))
-      return;
+  const confirmDelete = async () => {
+    if (!confirmDeleteRecord) return;
+    const id = confirmDeleteRecord._id;
     setDeletingId(id);
     await deleteRecord(id);
     setDeletingId(null);
+    setConfirmDeleteRecord(null);
   };
 
   const statusBadge = (status) => {
@@ -166,10 +169,11 @@ export default function PayrollListPage() {
                           <Download className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(r._id)}
+                          onClick={() => setConfirmDeleteRecord(r)}
                           disabled={deletingId === r._id}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-500 dark:text-rose-400 disabled:opacity-40 transition"
                           title="Delete Record"
+                          aria-label={`Delete record for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -210,6 +214,45 @@ export default function PayrollListPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Delete Payroll Batch?</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {MONTH_NAMES[confirmDeleteRecord.period.month - 1]} {confirmDeleteRecord.period.year}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-slate-300">
+              Are you sure you want to permanently delete this payroll statement and all employee calculations? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteRecord(null)}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deletingId === confirmDeleteRecord._id}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition disabled:opacity-50"
+              >
+                {deletingId === confirmDeleteRecord._id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
