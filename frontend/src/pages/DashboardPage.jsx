@@ -140,6 +140,12 @@ export default function DashboardPage() {
   const isTrial = plan === 'starter';
   const trialDays = user?.trialInfo?.daysRemaining;
 
+  // Calculate dynamic distribution bar widths safely
+  const grossSum = (totals?.totalPayout || 0) + (totals?.totalOvertimeBonus || 0) + (totals?.totalDeductions || 0);
+  const netSalaryPct = grossSum > 0 ? Math.round(((totals?.totalPayout || 0) / grossSum) * 100) : 70;
+  const overtimePct = grossSum > 0 ? Math.round(((totals?.totalOvertimeBonus || 0) / grossSum) * 100) : 20;
+  const deductionPct = grossSum > 0 ? Math.max(0, 100 - netSalaryPct - overtimePct) : 10;
+
   return (
     <div className="space-y-5">
       {/* Top Bar: Title & Filters (Reduced font & compact sizing) */}
@@ -350,10 +356,22 @@ export default function DashboardPage() {
           </div>
 
           {/* Progress bar segments */}
-          <div className="w-full h-1 bg-gray-100 dark:bg-slate-800 rounded-full flex overflow-hidden mt-2.5">
-            <div className="bg-blue-600 h-full w-[70%]" title="Net Salary"></div>
-            <div className="bg-emerald-500 h-full w-[20%]" title="Overtime Bonus"></div>
-            <div className="bg-rose-400 h-full w-[10%]" title="Deductions"></div>
+          <div className="w-full h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full flex overflow-hidden mt-2.5">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300"
+              style={{ width: `${netSalaryPct}%` }}
+              title={`Net Salary: ${netSalaryPct}%`}
+            />
+            <div
+              className="bg-emerald-500 h-full transition-all duration-300"
+              style={{ width: `${overtimePct}%` }}
+              title={`Overtime Bonus: ${overtimePct}%`}
+            />
+            <div
+              className="bg-rose-400 h-full transition-all duration-300"
+              style={{ width: `${deductionPct}%` }}
+              title={`Deductions: ${deductionPct}%`}
+            />
           </div>
         </div>
 
