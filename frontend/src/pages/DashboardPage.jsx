@@ -449,8 +449,19 @@ export default function DashboardPage() {
 
           <div className="overflow-x-auto">
             {records.length === 0 ? (
-              <div className="py-10 text-center text-gray-400 dark:text-slate-500 text-xs">
-                No payroll records found. Upload your first batch!
+              <div className="py-8 px-4 text-center rounded-xl bg-gray-50/70 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-800 my-2">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-slate-500 opacity-60" />
+                <p className="font-semibold text-gray-800 dark:text-slate-200 text-xs">No payroll batches calculated yet</p>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+                  Import an Excel (.xlsx) or CSV file containing employee attendance, overtime, and deductions to see your analytics.
+                </p>
+                <button
+                  onClick={() => navigate('/upload')}
+                  className="mt-3 inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Upload First Batch</span>
+                </button>
               </div>
             ) : (
               <table className="w-full text-left text-xs">
