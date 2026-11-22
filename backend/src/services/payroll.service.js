@@ -228,9 +228,9 @@ const calculateEmployeePayroll = (row, rowIndex) => {
 const parseAndCalculatePayroll = (filePath) => {
   let workbook;
 
-  // FIX #1: pass the options object that is actually declared, and remove the
-  // silent fallback that hid the real error behind "raw is not defined".
-  const readOptions = { type: 'file', raw: true };
+  // FIX #1: pass explicit readOptions with UTF-8 codepage support (65001)
+  // to properly preserve accented characters in CSV and XLSX files.
+  const readOptions = { type: 'file', raw: true, codepage: 65001, cellDates: false };
   try {
     workbook = XLSX.readFile(filePath, readOptions);
   } catch (err) {
