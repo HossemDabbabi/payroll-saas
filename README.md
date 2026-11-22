@@ -58,6 +58,25 @@ docker compose up --build
 
 ---
 
+## Environment Variables
+
+Copy `backend/.env.example` to `backend/.env` before launching the application. **Never commit `.env` to version control.**
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `PORT` | No | `5000` | Port on which Express API server listens |
+| `NODE_ENV` | No | `development` | Runtime environment (`development`, `production`, `test`) |
+| `MONGODB_URI` | **Yes** | — | MongoDB connection string (e.g. `mongodb://localhost:27017/payroll_saas`) |
+| `JWT_SECRET` | **Yes** | — | Secret string used to sign and verify JSON Web Tokens (min 32 chars recommended) |
+| `JWT_EXPIRES_IN` | No | `7d` | Lifetime of issued JWT authentication tokens (e.g. `7d`, `24h`) |
+| `FRONTEND_URL` | No | `http://localhost:5173` | Allowed origin for CORS headers |
+| `MAX_FILE_SIZE` | No | `10485760` | Maximum upload size in bytes (default 10 MB) |
+| `UPLOAD_PATH` | No | `./uploads` | Filesystem directory storing uploaded Excel/CSV files |
+| `STRIPE_SECRET_KEY` | No | — | Stripe API secret key for payment processing |
+| `STRIPE_WEBHOOK_SECRET` | No | — | Stripe webhook secret signature for validating billing events |
+
+---
+
 ## User Stories & Acceptance Criteria
 
 > `[x]` = verified by automated tests (see `TEST_PLAN.md`). `[ ]` = not verified yet.
