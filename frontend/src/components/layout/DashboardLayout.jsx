@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 import {
   LayoutDashboard,
   Upload,
@@ -218,7 +219,10 @@ export default function DashboardLayout() {
                 href="#help"
                 onClick={(e) => {
                   e.preventDefault();
-                  alert('PayrollPro Support: For assistance, please email support@payrollpro.com');
+                  toast('Need assistance? Email us at support@payrollpro.com', {
+                    icon: '💬',
+                    duration: 4000,
+                  });
                 }}
                 className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 text-xs font-medium transition"
               >
