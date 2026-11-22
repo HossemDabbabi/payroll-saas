@@ -15,6 +15,49 @@ A full-stack SaaS application designed to automate payroll calculations, streaml
 
 ---
 
+## Quick Start
+
+### Prerequisites
+
+- **Node.js**: >= 18.x
+- **npm**: >= 9.x
+- **MongoDB**: 7.x (local service or MongoDB Atlas cluster)
+- **Docker & Docker Compose**: (optional, for containerized run)
+
+### 1. Backend Setup
+
+```bash
+cd backend
+npm install
+cp .env.example .env     # Configure MONGODB_URI and JWT_SECRET
+npm run dev              # Runs on http://localhost:5000
+```
+
+### 2. Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev              # Runs on http://localhost:5173 (proxies API to :5000)
+```
+
+### 3. Docker Compose (All-in-one)
+
+```bash
+# Provide a secure JWT secret for containerized environment
+export JWT_SECRET="your_secure_random_jwt_secret_key"
+
+# Build and start all services (MongoDB, Backend, Frontend)
+docker compose up --build
+
+# Services:
+# - Frontend: http://localhost:5173
+# - Backend:  http://localhost:5000
+# - MongoDB:  mongodb://localhost:27017
+```
+
+---
+
 ## User Stories & Acceptance Criteria
 
 > `[x]` = verified by automated tests (see `TEST_PLAN.md`). `[ ]` = not verified yet.
