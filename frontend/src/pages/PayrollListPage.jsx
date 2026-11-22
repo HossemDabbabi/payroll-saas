@@ -84,6 +84,43 @@ export default function PayrollListPage() {
         </button>
       </div>
 
+      {/* Summary KPI Strip */}
+      {records.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Total Batches</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">{pagination.total || records.length}</span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Calendar className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Net Disbursed (Page)</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">
+                {records.reduce((acc, r) => acc + (r.summary?.totalNetPayout || 0), 0).toLocaleString()} <span className="text-xs text-gray-400">TND</span>
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Processed Staff Cycles</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">
+                {records.reduce((acc, r) => acc + (r.summary?.totalEmployees || 0), 0)} staff
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <FileSpreadsheet className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Table Card (Shopeers 2xl Border Style) */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
         {loading ? (
