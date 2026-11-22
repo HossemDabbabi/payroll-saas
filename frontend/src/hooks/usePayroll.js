@@ -8,16 +8,22 @@ export const usePayroll = () => {
   const [dashboardStats, setDashboardStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ total: 0, page: 1, limit: 10, pages: 1 });
+
+  const clearError = useCallback(() => setError(null), []);
 
   const fetchRecords = useCallback(async (params = {}) => {
     setLoading(true);
+    setError(null);
     try {
       const { data } = await payrollAPI.getAll(params);
       setRecords(data.data);
       setPagination(data.pagination);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to fetch payroll records.');
+      const msg = err.response?.data?.message || 'Failed to fetch payroll records.';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -112,8 +118,8 @@ export const usePayroll = () => {
   }, []);
 
   return {
-    records, currentRecord, dashboardStats, loading, uploading, pagination,
+    records, currentRecord, dashboardStats, loading, uploading, error, pagination,
     fetchRecords, fetchRecord, uploadPayroll, deleteRecord, fetchDashboardStats,
-    downloadExcel, downloadPayslip,
+    downloadExcel, downloadPayslip, clearError,
   };
 };
