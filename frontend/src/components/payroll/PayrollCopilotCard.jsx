@@ -159,7 +159,8 @@ const QUICK_SUGGESTIONS = [
   { icon: Calculator, label: 'How is IRPP calculated in Tunisia?', category: 'tax' },
   { icon: User, label: 'Give me all information for Imene Zouaghi', category: 'employee' },
   { icon: HelpCircle, label: 'What is the employee CNSS rate?', category: 'cnss' },
-  { icon: Upload, label: 'How do I upload my first payroll file?', category: 'faq' },
+  { icon: Sparkles, label: 'How is overtime bonus calculated (1.25x)?', category: 'overtime' },
+  { icon: Upload, label: 'What columns are required in payroll upload?', category: 'columns' },
 ];
 
 export default function PayrollCopilotCard({ totalPayout = 0, recordCount = 0 }) {
@@ -257,6 +258,7 @@ export default function PayrollCopilotCard({ totalPayout = 0, recordCount = 0 })
             onClick={handleReset}
             className="text-slate-400 hover:text-white transition p-1"
             title="Reset conversation"
+            aria-label="Reset Copilot conversation"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
