@@ -382,6 +382,7 @@ export default function DashboardPage() {
             <button
               onClick={() => navigate('/payroll')}
               className="text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-300"
+              aria-label="View full payroll activity history"
             >
               <MoreVertical className="w-3.5 h-3.5" />
             </button>
@@ -504,6 +505,7 @@ export default function DashboardPage() {
                             onClick={() => navigate(`/payroll/${r._id}`)}
                             className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-600 dark:text-blue-400 transition"
                             title="View statement"
+                            aria-label={`View statement for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -511,6 +513,7 @@ export default function DashboardPage() {
                             onClick={() => downloadExcel(r._id)}
                             className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 transition"
                             title="Download Excel"
+                            aria-label={`Download Excel report for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                           >
                             <Download className="w-3.5 h-3.5" />
                           </button>
