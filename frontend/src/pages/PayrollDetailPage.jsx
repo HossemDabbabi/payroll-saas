@@ -13,6 +13,7 @@ import {
   TrendingDown,
   Sparkles,
   Users,
+  X,
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -180,20 +181,37 @@ export default function PayrollDetailPage() {
             <p className="text-xs text-gray-400 dark:text-slate-400 mt-0.5">Line-by-line compensation details</p>
           </div>
 
-          <div className="flex items-center w-full sm:w-64 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-1.5 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:border-blue-500 transition">
+          <div className="flex items-center w-full sm:w-72 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl px-3 py-1.5 focus-within:bg-white dark:focus-within:bg-slate-800 focus-within:border-blue-500 transition">
             <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400 mr-2 flex-shrink-0" />
             <input
               type="text"
               placeholder="Search by name or matricule..."
+              aria-label="Search employees"
               className="bg-transparent border-none text-xs w-full focus:outline-none text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 ml-1"
+                aria-label="Clear search query"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          {filtered.length === 0 ? (
+            <div className="py-12 text-center text-gray-400 dark:text-slate-500 text-xs">
+              <Search className="w-6 h-6 mx-auto mb-2 opacity-40" />
+              <p className="font-semibold text-gray-700 dark:text-slate-300">No matching employee records</p>
+              <p className="mt-1">No employee matches &quot;{search}&quot;. Try adjusting your search query.</p>
+            </div>
+          ) : (
+            <table className="w-full text-left text-xs">
             <thead>
               <tr className="text-gray-400 dark:text-slate-400 border-b border-gray-100 dark:border-slate-800 pb-3">
                 <th className="pb-3 font-medium uppercase tracking-wider">Matricule</th>
@@ -267,6 +285,7 @@ export default function PayrollDetailPage() {
               ))}
             </tbody>
           </table>
+          )}
         </div>
       </div>
     </div>
