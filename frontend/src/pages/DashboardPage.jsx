@@ -140,6 +140,12 @@ export default function DashboardPage() {
   const isTrial = plan === 'starter';
   const trialDays = user?.trialInfo?.daysRemaining;
 
+  // Calculate dynamic distribution bar widths safely
+  const grossSum = (totals?.totalPayout || 0) + (totals?.totalOvertimeBonus || 0) + (totals?.totalDeductions || 0);
+  const netSalaryPct = grossSum > 0 ? Math.round(((totals?.totalPayout || 0) / grossSum) * 100) : 70;
+  const overtimePct = grossSum > 0 ? Math.round(((totals?.totalOvertimeBonus || 0) / grossSum) * 100) : 20;
+  const deductionPct = grossSum > 0 ? Math.max(0, 100 - netSalaryPct - overtimePct) : 10;
+
   return (
     <div className="space-y-5">
       {/* Top Bar: Title & Filters (Reduced font & compact sizing) */}
@@ -350,10 +356,22 @@ export default function DashboardPage() {
           </div>
 
           {/* Progress bar segments */}
-          <div className="w-full h-1 bg-gray-100 dark:bg-slate-800 rounded-full flex overflow-hidden mt-2.5">
-            <div className="bg-blue-600 h-full w-[70%]" title="Net Salary"></div>
-            <div className="bg-emerald-500 h-full w-[20%]" title="Overtime Bonus"></div>
-            <div className="bg-rose-400 h-full w-[10%]" title="Deductions"></div>
+          <div className="w-full h-1.5 bg-gray-100 dark:bg-slate-800 rounded-full flex overflow-hidden mt-2.5">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300"
+              style={{ width: `${netSalaryPct}%` }}
+              title={`Net Salary: ${netSalaryPct}%`}
+            />
+            <div
+              className="bg-emerald-500 h-full transition-all duration-300"
+              style={{ width: `${overtimePct}%` }}
+              title={`Overtime Bonus: ${overtimePct}%`}
+            />
+            <div
+              className="bg-rose-400 h-full transition-all duration-300"
+              style={{ width: `${deductionPct}%` }}
+              title={`Deductions: ${deductionPct}%`}
+            />
           </div>
         </div>
 
@@ -364,6 +382,7 @@ export default function DashboardPage() {
             <button
               onClick={() => navigate('/payroll')}
               className="text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-300"
+              aria-label="View full payroll activity history"
             >
               <MoreVertical className="w-3.5 h-3.5" />
             </button>
@@ -431,8 +450,19 @@ export default function DashboardPage() {
 
           <div className="overflow-x-auto">
             {records.length === 0 ? (
-              <div className="py-10 text-center text-gray-400 dark:text-slate-500 text-xs">
-                No payroll records found. Upload your first batch!
+              <div className="py-8 px-4 text-center rounded-xl bg-gray-50/70 dark:bg-slate-800/40 border border-dashed border-gray-200 dark:border-slate-800 my-2">
+                <FileText className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-slate-500 opacity-60" />
+                <p className="font-semibold text-gray-800 dark:text-slate-200 text-xs">No payroll batches calculated yet</p>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1 max-w-sm mx-auto">
+                  Import an Excel (.xlsx) or CSV file containing employee attendance, overtime, and deductions to see your analytics.
+                </p>
+                <button
+                  onClick={() => navigate('/upload')}
+                  className="mt-3 inline-flex items-center space-x-1.5 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Upload First Batch</span>
+                </button>
               </div>
             ) : (
               <table className="w-full text-left text-xs">
@@ -475,6 +505,7 @@ export default function DashboardPage() {
                             onClick={() => navigate(`/payroll/${r._id}`)}
                             className="p-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/60 text-blue-600 dark:text-blue-400 transition"
                             title="View statement"
+                            aria-label={`View statement for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
@@ -482,6 +513,7 @@ export default function DashboardPage() {
                             onClick={() => downloadExcel(r._id)}
                             className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 transition"
                             title="Download Excel"
+                            aria-label={`Download Excel report for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                           >
                             <Download className="w-3.5 h-3.5" />
                           </button>

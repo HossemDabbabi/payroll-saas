@@ -12,6 +12,7 @@ import {
   FileText,
   TrendingDown,
   TrendingUp,
+  AlertTriangle,
 } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -34,17 +35,19 @@ export default function PayrollListPage() {
   const { records, loading, pagination, fetchRecords, deleteRecord, downloadExcel } = usePayroll();
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDeleteRecord, setConfirmDeleteRecord] = useState(null);
 
   useEffect(() => {
     fetchRecords({ page });
   }, [page]);
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this payroll record? This action cannot be undone.'))
-      return;
+  const confirmDelete = async () => {
+    if (!confirmDeleteRecord) return;
+    const id = confirmDeleteRecord._id;
     setDeletingId(id);
     await deleteRecord(id);
     setDeletingId(null);
+    setConfirmDeleteRecord(null);
   };
 
   const statusBadge = (status) => {
@@ -80,6 +83,43 @@ export default function PayrollListPage() {
           <span>New Payroll Batch</span>
         </button>
       </div>
+
+      {/* Summary KPI Strip */}
+      {records.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Total Batches</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">{pagination.total || records.length}</span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Calendar className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Net Disbursed (Page)</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">
+                {records.reduce((acc, r) => acc + (r.summary?.totalNetPayout || 0), 0).toLocaleString()} <span className="text-xs text-gray-400">TND</span>
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-800 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wider block">Processed Staff Cycles</span>
+              <span className="text-base font-bold text-gray-900 dark:text-slate-100">
+                {records.reduce((acc, r) => acc + (r.summary?.totalEmployees || 0), 0)} staff
+              </span>
+            </div>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+              <FileSpreadsheet className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table Card (Shopeers 2xl Border Style) */}
       <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden">
@@ -166,10 +206,11 @@ export default function PayrollListPage() {
                           <Download className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(r._id)}
+                          onClick={() => setConfirmDeleteRecord(r)}
                           disabled={deletingId === r._id}
                           className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/60 text-rose-500 dark:text-rose-400 disabled:opacity-40 transition"
                           title="Delete Record"
+                          aria-label={`Delete record for ${MONTH_NAMES[r.period.month - 1]} ${r.period.year}`}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -210,6 +251,45 @@ export default function PayrollListPage() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDeleteRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">Delete Payroll Batch?</h3>
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {MONTH_NAMES[confirmDeleteRecord.period.month - 1]} {confirmDeleteRecord.period.year}
+                </p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-600 dark:text-slate-300">
+              Are you sure you want to permanently delete this payroll statement and all employee calculations? This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end space-x-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteRecord(null)}
+                className="px-3 py-1.5 rounded-xl border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deletingId === confirmDeleteRecord._id}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition disabled:opacity-50"
+              >
+                {deletingId === confirmDeleteRecord._id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

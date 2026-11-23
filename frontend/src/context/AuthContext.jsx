@@ -16,15 +16,23 @@ export const AuthProvider = ({ children }) => {
   const persistAuth = useCallback((userData, authToken) => {
     setUser(userData);
     setToken(authToken);
-    localStorage.setItem('payroll_token', authToken);
-    localStorage.setItem('payroll_user', JSON.stringify(userData));
+    try {
+      localStorage.setItem('payroll_token', authToken);
+      localStorage.setItem('payroll_user', JSON.stringify(userData));
+    } catch {
+      // Ignore storage quota errors in restricted browser contexts
+    }
   }, []);
 
   const clearAuth = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('payroll_token');
-    localStorage.removeItem('payroll_user');
+    try {
+      localStorage.removeItem('payroll_token');
+      localStorage.removeItem('payroll_user');
+    } catch {
+      // Ignore storage access errors
+    }
   }, []);
 
   // Validate token on mount
@@ -64,8 +72,10 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('payroll_user', JSON.stringify(data.user));
   };
 
+  const isAuthenticated = Boolean(user && token);
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, token, loading, isAuthenticated, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
