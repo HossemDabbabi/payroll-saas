@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: payroll-saas-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        value: mongodb+srv://zed36611_db_user:PQkfEeiAVdh24pEI@cluster0.nzxnbjk.mongodb.net/payroll_saas?retryWrites=true&w=majority
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: payroll-saas-frontend
+          property: host
+
+  - type: web
+    name: payroll-saas-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: payroll-saas-backend
+          property: host
