@@ -4,6 +4,8 @@
   "description": "A full-stack SaaS application for automating payroll calculations for SMBs.",
   "main": "index.js",
   "scripts": {
+    "start": "node backend/src/server.js",
+    "build": "cd frontend && npm install && npm run build",
     "test:frontend": "npm --prefix frontend run test",
     "test:backend": "npm --prefix backend test",
     "test:e2e": "playwright test"
